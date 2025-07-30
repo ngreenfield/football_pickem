@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+Home
+{% endblock %}
+
+{% block content %}
+
+    <div class="welcome">
+        <h1>Welcome to Football Picker 🏈</h1>
+        {% if user.is_authenticated %}
+            <p>Hello, {{ user.username }}! Ready to make your picks for this week?</p>
+        {% else %}
+            <p>Sign up or log in to start making your picks!</p>
+        {% endif %}
+    </div>
+
+{% endblock content %}
