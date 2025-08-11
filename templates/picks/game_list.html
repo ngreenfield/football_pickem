@@ -8,10 +8,10 @@
 <ul>
     {% for game in games %}
         <li>
-            <a href="{% url 'game_detail' game.pk}">
+            <a href="{% url 'game_detail' game.pk %}">
                 {{ game.away_team.short_name }} @ {{ game.home_team.short_name }} 
             </a>
-            - {{ game.game_date|date:"M d, Y H:i" }}
+                - {{ game.week }} - {{ game.game_date|date:"M d, Y H:i" }}
         </li>
     {% empty %}
         <li>No games found</li>

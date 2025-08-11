@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Game Details{% endblock %}
+
+{% block content %}
+<h1> Game Details</h1>
+
+<div class="game-details">
+    <p><strong>Week:</strong> {{ game.week }}</p>
+    <p><strong>Home Team:</strong> {{ game.home_team }}</p>
+    <p><strong>Away Team:</strong> {{ game.away_team }}</p>
+    <p><strong>Date & Time:</strong> {{ game.game_date|date:"F j, Y, g:i A" }}</p>
+    <p><strong>Week:</strong> {{ game.week }}</p>
+</div>
+
+<a href="{% url 'game_list' %}">Back to Games List</a>
+
+{% endblock %}
