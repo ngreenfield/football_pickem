@@ -18,7 +18,8 @@ class Week(models.Model):
     
 
 class Game(models.Model):
-    week = models.ForeignKey(Week, on_delete=models.CASCADE)
+    api_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    week = models.ForeignKey(Week, on_delete=models.CASCADE, null=True, blank=True)
     home_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='home_team')
     away_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='away_team')
     game_date = models.DateTimeField()
