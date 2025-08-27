@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home - Football Picker{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="welcome">
+                <h1 class="display-4 mb-4">Welcome to Football Picker 🏈</h1>
+                
+                {% if user.is_authenticated %}
+                    <div class="alert alert-success">
+                        <h4>Hello, {{ user.username }}!</h4>
+                        <p>Ready to make your picks for this week?</p>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">📋 Make Picks</h5>
+                                    <p class="card-text">View upcoming games and make your weekly picks</p>
+                                    <a href="{% url 'game_list' %}" class="btn btn-primary">View Games</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">📊 My Stats</h5>
+                                    <p class="card-text">Check your picks, stats, and standings</p>
+                                    <a href="{% url 'users:profile' %}" class="btn btn-success">View Profile</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <p class="lead">Join the competition and start making your NFL picks!</p>
+                        <p>Sign up or log in to participate in our football pick'em league.</p>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'users:signup' %}" class="btn btn-success btn-lg me-3">Sign Up</a>
+                        <a href="{% url 'users:login' %}" class="btn btn-primary btn-lg">Login</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    {% if user.is_authenticated %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="text-center mb-4">How It Works</h3>
+            <div class="row">
+                <div class="col-md-4 text-center">
+                    <div class="mb-3">
+                        <span class="badge bg-primary rounded-pill fs-4">1</span>
+                    </div>
+                    <h5>Pick Winners</h5>
+                    <p>Select which team you think will win each NFL game</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="mb-3">
+                        <span class="badge bg-primary rounded-pill fs-4">2</span>
+                    </div>
+                    <h5>Assign Confidence</h5>
+                    <p>Rank your picks with confidence points (1-16)</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="mb-3">
+                        <span class="badge bg-primary rounded-pill fs-4">3</span>
+                    </div>
+                    <h5>Earn Points</h5>
+                    <p>Get points for correct picks based on your confidence level</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}

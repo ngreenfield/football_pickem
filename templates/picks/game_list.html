@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Games{% endblock %}
+
+{% block content %}
+<h1>Upcoming Games</h1>
+
+<ul>
+    {% for game in games %}
+        <li>
+            <a href="{% url 'game_detail' game.pk %}">
+                {{ game.away_team.short_name }} @ {{ game.home_team.short_name }} 
+            </a>
+                - {{ game.week }} - {{ game.game_date|date:"M d, Y H:i" }}
+        </li>
+    {% empty %}
+        <li>No games found</li>
+    
+    {% endfor %}
+</ul>
+{% endblock %}

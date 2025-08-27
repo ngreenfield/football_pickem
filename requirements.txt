@@ -1,0 +1,5 @@
+asgiref==3.9.1
+Django==5.2.5
+sqlparse==0.5.3
+requests==2.32.3
+python-dateutil==2.9.0

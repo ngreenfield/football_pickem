@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ user.username }}'s Profile - Football Picker{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>{{ user.username }}'s Profile 🏈</h2>
+            
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary">{{ total_picks }}</h5>
+                            <p class="card-text">Total Picks</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-success">{{ correct_picks }}</h5>
+                            <p class="card-text">Correct Picks</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-info">{{ win_percentage }}%</h5>
+                            <p class="card-text">Win Rate</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-warning">{{ total_points }}</h5>
+                            <p class="card-text">Total Points</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Picks -->
+            <div class="card">
+                <div class="card-header">
+                    <h4>Recent Picks</h4>
+                </div>
+                <div class="card-body">
+                    {% if user_picks %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Week</th>
+                                        <th>Game</th>
+                                        <th>Pick</th>
+                                        <th>Confidence</th>
+                                        <th>Result</th>
+                                        <th>Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pick in user_picks %}
+                                        <tr>
+                                            <td>{{ pick.game.week.number }}</td>
+                                            <td>{{ pick.game.away_team.short_name }} @ {{ pick.game.home_team.short_name }}</td>
+                                            <td>
+                                                <strong>{{ pick.selected_team.short_name }}</strong>
+                                            </td>
+                                            <td>{{ pick.confidence_poitns }}</td>
+                                            <td>
+                                                {% if pick.game.home_score is not None and pick.game.away_score is not None %}
+                                                    {% if pick.game.home_score > pick.game.away_score %}
+                                                        {% if pick.selected_team == pick.game.home_team %}
+                                                            <span class="badge bg-success">✓ Win</span>
+                                                        {% else %}
+                                                            <span class="badge bg-danger">✗ Loss</span>
+                                                        {% endif %}
+                                                    {% elif pick.game.away_score > pick.game.home_score %}
+                                                        {% if pick.selected_team == pick.game.away_team %}
+                                                            <span class="badge bg-success">✓ Win</span>
+                                                        {% else %}
+                                                            <span class="badge bg-danger">✗ Loss</span>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Tie</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="badge bg-warning">Pending</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if pick.game.home_score is not None and pick.game.away_score is not None %}
+                                                    {% if pick.game.home_score > pick.game.away_score and pick.selected_team == pick.game.home_team %}
+                                                        {{ pick.confidence_poitns }}
+                                                    {% elif pick.game.away_score > pick.game.home_score and pick.selected_team == pick.game.away_team %}
+                                                        {{ pick.confidence_poitns }}
+                                                    {% else %}
+                                                        0
+                                                    {% endif %}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p>No picks made yet! <a href="{% url 'game_list' %}">Start making picks</a></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'game_list' %}" class="btn btn-primary">View Games</a>
+                        <a href="{% url 'root' %}" class="btn btn-secondary">Home</a>
+                        <a href="{% url 'users:logout' %}" class="btn btn-outline-danger">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
