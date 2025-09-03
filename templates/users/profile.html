@@ -4,6 +4,8 @@
 {% block title %}{{ user.username }}'s Profile - Football Picker{% endblock %}
 
 {% block content %}
+{% include 'navbar.html' %}
+
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8">
@@ -72,17 +74,11 @@
                                             <td>
                                                 <strong>{{ pick.selected_team.short_name }}</strong>
                                             </td>
-                                            <td>{{ pick.confidence_poitns }}</td>
+                                            <td>{{ pick.confidence_points }}</td>
                                             <td>
                                                 {% if pick.game.home_score is not None and pick.game.away_score is not None %}
-                                                    {% if pick.game.home_score > pick.game.away_score %}
-                                                        {% if pick.selected_team == pick.game.home_team %}
-                                                            <span class="badge bg-success">✓ Win</span>
-                                                        {% else %}
-                                                            <span class="badge bg-danger">✗ Loss</span>
-                                                        {% endif %}
-                                                    {% elif pick.game.away_score > pick.game.home_score %}
-                                                        {% if pick.selected_team == pick.game.away_team %}
+                                                    {% if pick.game.winner %}
+                                                        {% if pick.selected_team == pick.game.winner %}
                                                             <span class="badge bg-success">✓ Win</span>
                                                         {% else %}
                                                             <span class="badge bg-danger">✗ Loss</span>
@@ -95,14 +91,8 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                {% if pick.game.home_score is not None and pick.game.away_score is not None %}
-                                                    {% if pick.game.home_score > pick.game.away_score and pick.selected_team == pick.game.home_team %}
-                                                        {{ pick.confidence_poitns }}
-                                                    {% elif pick.game.away_score > pick.game.home_score and pick.selected_team == pick.game.away_team %}
-                                                        {{ pick.confidence_poitns }}
-                                                    {% else %}
-                                                        0
-                                                    {% endif %}
+                                                {% if pick.game.is_finished %}
+                                                    {{ pick.points_earned }}
                                                 {% else %}
                                                     -
                                                 {% endif %}
@@ -113,7 +103,7 @@
                             </table>
                         </div>
                     {% else %}
-                        <p>No picks made yet! <a href="{% url 'game_list' %}">Start making picks</a></p>
+                        <p>No picks made yet! <a href="{% url 'picks:game_list' %}">Start making picks</a></p>
                     {% endif %}
                 </div>
             </div>
@@ -126,7 +116,9 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{% url 'game_list' %}" class="btn btn-primary">View Games</a>
+                        <a href="{% url 'picks:game_list' %}" class="btn btn-primary">View Games</a>
+                        <a href="{% url 'picks:my_picks' %}" class="btn btn-success">My Detailed Picks</a>
+                        <a href="{% url 'picks:leaderboard' %}" class="btn btn-info">Leaderboard</a>
                         <a href="{% url 'root' %}" class="btn btn-secondary">Home</a>
                         <a href="{% url 'users:logout' %}" class="btn btn-outline-danger">Logout</a>
                     </div>

@@ -28,30 +28,19 @@ def profile_view(request):
     # Get some basic stats
     total_picks = user_picks.count()
     
-    # Count correct picks (where selected team won)
+    # Count correct picks and calculate points
     correct_picks = 0
     total_points = 0
+    completed_games = 0
     
     for pick in user_picks:
-        if pick.game.home_score is not None and pick.game.away_score is not None:
-            # Determine winner
-            if pick.game.home_score > pick.game.away_score:
-                winner = pick.game.home_team
-            elif pick.game.away_score > pick.game.home_score:
-                winner = pick.game.away_team
-            else:
-                winner = None  # Tie
-            
-            # Check if user picked correctly
-            if winner and pick.selected_team == winner:
+        if pick.game.is_finished:
+            completed_games += 1
+            if pick.is_correct:
                 correct_picks += 1
-                total_points += pick.confidence_poitns  # Note: keeping the typo for now to match your model
+                total_points += pick.confidence_points  # Fixed field name
     
     # Calculate win percentage
-    completed_games = user_picks.filter(
-        game__home_score__isnull=False, 
-        game__away_score__isnull=False
-    ).count()
     win_percentage = (correct_picks / completed_games * 100) if completed_games > 0 else 0
     
     context = {
