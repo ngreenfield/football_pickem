@@ -46,27 +46,41 @@ class Command(BaseCommand):
         games_created = 0
         games_updated = 0
         scores_updated = 0
+        bye_weeks_skipped = 0
         
         for item in data:
             try:
                 game_key = item.get('GameKey')
                 week_number = item.get('Week')
+                home_team_code = item.get('HomeTeam')
+                away_team_code = item.get('AwayTeam')
                 
-                # Skip if no essential data
-                if not game_key or not week_number:
-                    self.stdout.write(
-                        self.style.WARNING(f"Skipping game with missing key or week: {item}")
-                    )
+                # Skip bye week games - these aren't real games
+                if (away_team_code == 'BYE' or 
+                    home_team_code == 'BYE' or 
+                    not game_key or 
+                    not week_number or
+                    item.get('GlobalGameID') == 0):
+                    
+                    if away_team_code == 'BYE' or home_team_code == 'BYE':
+                        bye_weeks_skipped += 1
+                        self.stdout.write(
+                            self.style.WARNING(f"Skipping bye week for {home_team_code}")
+                        )
+                    else:
+                        self.stdout.write(
+                            self.style.WARNING(f"Skipping game with missing essential data: {item}")
+                        )
                     continue
                 
                 # Get or create teams
                 home_team, _ = Team.objects.get_or_create(
-                    short_name=item['HomeTeam'],
-                    defaults={'name': item.get('HomeTeamName', item['HomeTeam'])}
+                    short_name=home_team_code,
+                    defaults={'name': item.get('HomeTeamName', home_team_code)}
                 )
                 away_team, _ = Team.objects.get_or_create(
-                    short_name=item['AwayTeam'],
-                    defaults={'name': item.get('AwayTeamName', item['AwayTeam'])}
+                    short_name=away_team_code,
+                    defaults={'name': item.get('AwayTeamName', away_team_code)}
                 )
 
                 # Parse game date
@@ -100,35 +114,70 @@ class Command(BaseCommand):
                 # Get scores (will be None if not available)
                 home_score = item.get('HomeScore')
                 away_score = item.get('AwayScore')
-                is_closed = item.get('IsClosed', False)
                 
-                # Create or update game
-                game, created = Game.objects.update_or_create(
-                    api_id=game_key,
-                    defaults={
-                        'home_team': home_team,
-                        'away_team': away_team,
-                        'game_date': game_date,
-                        'week': week,
-                        'home_score': home_score,
-                        'away_score': away_score,
-                        'status': status,
-                        'is_closed': is_closed,
-                    }
-                )
+                # Handle is_closed - ensure it's never None for database constraint
+                is_closed = item.get('IsClosed')
+                if is_closed is None:
+                    is_closed = status == 'FINAL'  # Default based on game status
                 
-                if created:
-                    games_created += 1
-                    self.stdout.write(f"Created: {game}")
+                # Skip creating/updating if scores-only mode and this is a new game
+                if options['scores_only']:
+                    try:
+                        game = Game.objects.get(api_id=game_key)
+                        # Update existing game
+                        updated = False
+                        if game.home_score != home_score or game.away_score != away_score:
+                            game.home_score = home_score
+                            game.away_score = away_score
+                            updated = True
+                        if game.status != status:
+                            game.status = status
+                            updated = True
+                        if game.is_closed != is_closed:
+                            game.is_closed = is_closed
+                            updated = True
+                            
+                        if updated:
+                            game.save()
+                            games_updated += 1
+                            if home_score is not None and away_score is not None:
+                                scores_updated += 1
+                                winner = "TIE" if home_score == away_score else (
+                                    home_team.short_name if home_score > away_score else away_team.short_name
+                                )
+                                self.stdout.write(f"Updated scores: {game} -> {away_score}-{home_score} ({winner})")
+                        
+                    except Game.DoesNotExist:
+                        # Skip if game doesn't exist and we're in scores-only mode
+                        continue
                 else:
-                    games_updated += 1
-                    # Check if scores were updated
-                    if home_score is not None and away_score is not None:
-                        scores_updated += 1
-                        winner = "TIE" if home_score == away_score else (
-                            home_team.short_name if home_score > away_score else away_team.short_name
-                        )
-                        self.stdout.write(f"Updated scores: {game} -> {away_score}-{home_score} ({winner})")
+                    # Create or update game (normal mode)
+                    game, created = Game.objects.update_or_create(
+                        api_id=game_key,
+                        defaults={
+                            'home_team': home_team,
+                            'away_team': away_team,
+                            'game_date': game_date,
+                            'week': week,
+                            'home_score': home_score,
+                            'away_score': away_score,
+                            'status': status,
+                            'is_closed': is_closed,
+                        }
+                    )
+                    
+                    if created:
+                        games_created += 1
+                        self.stdout.write(f"Created: {game}")
+                    else:
+                        games_updated += 1
+                        # Check if scores were updated
+                        if home_score is not None and away_score is not None:
+                            scores_updated += 1
+                            winner = "TIE" if home_score == away_score else (
+                                home_team.short_name if home_score > away_score else away_team.short_name
+                            )
+                            self.stdout.write(f"Updated scores: {game} -> {away_score}-{home_score} ({winner})")
                     
             except Exception as e:
                 self.stdout.write(
@@ -143,6 +192,7 @@ class Command(BaseCommand):
                 f"  Games created: {games_created}\n"
                 f"  Games updated: {games_updated}\n"
                 f"  Scores updated: {scores_updated}\n"
+                f"  Bye weeks skipped: {bye_weeks_skipped}\n"
                 f"  Total processed: {games_created + games_updated}"
             )
         )

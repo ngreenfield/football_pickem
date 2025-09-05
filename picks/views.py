@@ -115,17 +115,25 @@ def handle_week_picks_submission(request, week, games, existing_picks):
                 
             except (Team.DoesNotExist, ValueError) as e:
                 messages.error(request, f'Invalid pick data for {game}')
-                return redirect('week_picks', week_number=week.number)
+                return redirect('picks:week_picks', week_number=week.number)
     
     # Validate confidence points range
     expected_points = list(range(1, len(games) + 1))
     confidence_points_used.sort()
     
-    if confidence_points_used != expected_points:
-        messages.error(request, f'You must use confidence points 1-{len(games)} exactly once each')
-        return redirect('week_picks', week_number=week.number)
-    
-    # Save all picks
+    min_point = 1
+    max_point = len(games)
+
+    # Only check that used points are unique and within valid range
+    if len(confidence_points_used) != len(set(confidence_points_used)):
+        messages.error(request, "Duplicate confidence points used.")
+        return redirect('picks:week_picks', week_number=week.number)
+
+    if not all(min_point <= cp <= max_point for cp in confidence_points_used):
+        messages.error(request, f"Confidence points must be between {min_point} and {max_point}")
+        return redirect('picks:week_picks', week_number=week.number)
+        
+        # Save all picks
     for pick_data in picks_data:
         Pick.objects.update_or_create(
             user=request.user,
@@ -137,7 +145,7 @@ def handle_week_picks_submission(request, week, games, existing_picks):
         )
     
     messages.success(request, f'Successfully saved {len(picks_data)} picks for Week {week.number}!')
-    return redirect('week_picks', week_number=week.number)
+    return redirect('picks:week_picks', week_number=week.number)
 
 @login_required
 def make_pick(request, game_id):

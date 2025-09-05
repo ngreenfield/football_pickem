@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}My Picks{% endblock %}
+
+{% block content %}
+{% include 'navbar.html' %}
+<h1>My Picks</h1>
+
+<div>
+    <p><strong>Total Picks:</strong> {{ total_picks }}</p>
+    <p><strong>Correct Picks:</strong> {{ correct_picks }}</p>
+    <p><strong>Total Points:</strong> {{ total_points }}</p>
+    <p><strong>Win Percentage:</strong> {{ win_percentage }}%</p>
+    <p><strong>Completed Games:</strong> {{ completed_games }}</p>
+</div>
+
+{% if picks_by_week %}
+    {% for week_num, picks in picks_by_week.items %}
+        <section style="margin-bottom: 2em;">
+            <h2>Week {{ week_num }}</h2>
+            <table border="1" cellpadding="5" cellspacing="0" style="width:100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>Game Date</th>
+                        <th>Matchup</th>
+                        <th>Your Pick</th>
+                        <th>Confidence Points</th>
+                        <th>Result</th>
+                        <th>Points Earned</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pick in picks %}
+                        <tr>
+                            <td>{{ pick.game.game_date|date:"M d, Y H:i" }}</td>
+                            <td>{{ pick.game.home_team.name }} vs {{ pick.game.away_team.name }}</td>
+                            <td>{{ pick.selected_team.name }}</td>
+                            <td>{{ pick.confidence_points }}</td>
+                            <td>
+                                {% if pick.game.is_finished %}
+                                    {% if pick.is_correct %}
+                                        <span style="color: green;">Correct</span>
+                                    {% else %}
+                                        <span style="color: red;">Incorrect</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span>Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if pick.game.is_finished %}
+                                    {{ pick.points_earned }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    {% endfor %}
+{% else %}
+    <p>You have not made any picks yet.</p>
+{% endif %}
+
+{% endblock %}

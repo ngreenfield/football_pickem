@@ -3,16 +3,158 @@
 {% block title %}Game Details{% endblock %}
 
 {% block content %}
-<h1> Game Details</h1>
+<h1>Game Details</h1>
 
 <div class="game-details">
     <p><strong>Week:</strong> {{ game.week }}</p>
-    <p><strong>Home Team:</strong> {{ game.home_team }}</p>
     <p><strong>Away Team:</strong> {{ game.away_team }}</p>
+    <p><strong>Home Team:</strong> {{ game.home_team }}</p>
     <p><strong>Date & Time:</strong> {{ game.game_date|date:"F j, Y, g:i A" }}</p>
-    <p><strong>Week:</strong> {{ game.week }}</p>
+    <p><strong>Status:</strong> {{ game.get_status_display }}</p>
+    
+    {% if game.home_score is not None and game.away_score is not None %}
+        <div class="score-section">
+            <h3>Current Score</h3>
+            <div class="scoreboard">
+                <div class="team-score">
+                    <span class="team-name">{{ game.away_team }}</span>
+                    <span class="score">{{ game.away_score }}</span>
+                </div>
+                <div class="score-separator">-</div>
+                <div class="team-score">
+                    <span class="team-name">{{ game.home_team }}</span>
+                    <span class="score">{{ game.home_score }}</span>
+                </div>
+            </div>
+            
+            {% if game.status == 'FINAL' and game.home_score != game.away_score %}
+                <div class="winner">
+                    <strong>Winner: 
+                        {% if game.home_score > game.away_score %}
+                            {{ game.home_team }}
+                        {% else %}
+                            {{ game.away_team }}
+                        {% endif %}
+                    </strong>
+                </div>
+            {% elif game.status == 'FINAL' and game.home_score == game.away_score %}
+                <div class="tie">
+                    <strong>Final Result: TIE</strong>
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="no-score">
+            {% if game.status == 'INPROGRESS' %}
+                <p><em>Game in progress - scores will be updated shortly</em></p>
+            {% elif game.status == 'SCHEDULED' %}
+                <p><em>Game hasn't started yet</em></p>
+            {% elif game.status == 'FINAL' %}
+                <p><em>Game finished - scores not yet available from API</em></p>
+            {% else %}
+                <p><em>Scores not yet available</em></p>
+            {% endif %}
+        </div>
+    {% endif %}
+    
+    {% if game.is_closed %}
+        <p><strong>Game Status:</strong> <span class="closed-game">Game Closed</span></p>
+    {% endif %}
 </div>
 
-<a href="{% url 'game_list' %}">Back to Games List</a>
+<style>
+.game-details {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.score-section {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: white;
+    border-radius: 6px;
+    border: 2px solid #ddd;
+}
+
+.scoreboard {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin: 15px 0;
+    font-size: 1.2em;
+}
+
+.team-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 100px;
+}
+
+.team-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.score {
+    font-size: 2em;
+    font-weight: bold;
+    color: #333;
+}
+
+.score-separator {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #666;
+}
+
+.winner {
+    text-align: center;
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #d4edda;
+    color: #155724;
+    border-radius: 4px;
+}
+
+.tie {
+    text-align: center;
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #fff3cd;
+    color: #856404;
+    border-radius: 4px;
+}
+
+.no-score {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+.closed-game {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+@media (max-width: 600px) {
+    .scoreboard {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .score-separator {
+        transform: rotate(90deg);
+    }
+}
+</style>
+
+<a href="{% url 'picks:game_list' %}">Back to Games List</a>
 
 {% endblock %}
