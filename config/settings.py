@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-qp#92z!!+o07b!+=-5)!pp5cdzz9=7_!-%ztj(j&teq3rc2r02
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['football-pickem-league-81e442b59816.herokuapp.com']
 
 
 # Application definition
