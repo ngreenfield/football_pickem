@@ -1,1 +1,1 @@
-web: gunicorn football_pickem.wsgi
+web: gunicorn config.wsgi
