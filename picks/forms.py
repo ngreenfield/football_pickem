@@ -1,4 +1,5 @@
 from django import forms
+from django.db import models  # Add this import
 from .models import Pick, Team, Game
 
 class PickForm(forms.ModelForm):

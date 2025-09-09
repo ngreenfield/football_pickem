@@ -25,7 +25,7 @@
                     <small class="text-muted">Ranked by total points earned</small>
                 </div>
                 <div class="card-body">
-                    {% if users %}
+                    {% if user_stats %}
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead class="table-dark">
@@ -34,65 +34,56 @@
                                         <th>Player</th>
                                         <th>Total Points</th>
                                         <th>Total Picks</th>
+                                        <th>Completed Games</th>
                                         <th>Correct</th>
                                         <th>Win %</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for user_data in users %}
-                                        {% with picks=user_data.pick_set.all %}
-                                            {% with completed_picks=picks|length %}
-                                                {% with correct_count=0 %}
-                                                    {% for pick in picks %}
-                                                        {% if pick.is_correct and pick.game.is_finished %}
-                                                            {% with correct_count=correct_count|add:1 %}{% endwith %}
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                    <tr {% if user_data == user %}class="table-warning"{% endif %}>
-                                                        <td>
-                                                            <strong>
-                                                                {% if forloop.counter == 1 %}
-                                                                    🥇 1st
-                                                                {% elif forloop.counter == 2 %}
-                                                                    🥈 2nd
-                                                                {% elif forloop.counter == 3 %}
-                                                                    🥉 3rd
-                                                                {% else %}
-                                                                    {{ forloop.counter }}
-                                                                {% endif %}
-                                                            </strong>
-                                                        </td>
-                                                        <td>
-                                                            <strong>
-                                                                {{ user_data.username }}
-                                                                {% if user_data == user %}
-                                                                    <span class="badge bg-primary ms-1">You</span>
-                                                                {% endif %}
-                                                            </strong>
-                                                        </td>
-                                                        <td>
-                                                            <span class="points-display">
-                                                                {{ user_data.total_points|default:0 }}
-                                                            </span>
-                                                        </td>
-                                                        <td>{{ user_data.total_picks|default:0 }}</td>
-                                                        <td>{{ correct_count }}</td>
-                                                        <td>
-                                                            {% if completed_picks > 0 %}
-                                                                {% with win_pct=correct_count|floatformat:1 %}
-                                                                    {{ win_pct }}%
-                                                                {% endwith %}
-                                                            {% else %}
-                                                                -
-                                                            {% endif %}
-                                                        </td>
-                                                    </tr>
-                                                {% endwith %}
-                                            {% endwith %}
-                                        {% endwith %}
+                                    {% for stats in user_stats %}
+                                        <tr {% if stats.user == user %}class="table-warning"{% endif %}>
+                                            <td>
+                                                <strong>
+                                                    {% if forloop.counter == 1 %}
+                                                        🥇 1st
+                                                    {% elif forloop.counter == 2 %}
+                                                        🥈 2nd
+                                                    {% elif forloop.counter == 3 %}
+                                                        🥉 3rd
+                                                    {% else %}
+                                                        {{ forloop.counter }}
+                                                    {% endif %}
+                                                </strong>
+                                            </td>
+                                            <td>
+                                                <strong>
+                                                    {{ stats.user.username }}
+                                                    {% if stats.user == user %}
+                                                        <span class="badge bg-primary ms-1">You</span>
+                                                    {% endif %}
+                                                </strong>
+                                            </td>
+                                            <td>
+                                                <span class="points-display">
+                                                    <strong>{{ stats.total_points }}</strong>
+                                                </span>
+                                            </td>
+                                            <td>{{ stats.total_picks }}</td>
+                                            <td>{{ stats.completed_games }}</td>
+                                            <td>
+                                                <span class="badge bg-success">{{ stats.correct_picks }}</span>
+                                            </td>
+                                            <td>
+                                                {% if stats.completed_games > 0 %}
+                                                    <strong>{{ stats.win_percentage }}%</strong>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
                                     {% empty %}
                                         <tr>
-                                            <td colspan="6" class="text-center text-muted">
+                                            <td colspan="7" class="text-center text-muted">
                                                 No players have made picks yet.
                                             </td>
                                         </tr>

@@ -232,31 +232,47 @@ def my_picks(request):
 def leaderboard(request):
     """Display leaderboard of all users"""
     from django.contrib.auth.models import User
-    from django.db.models import Count, Sum, Case, When, IntegerField
+    from django.db.models import Count, Sum, Case, When, IntegerField, Q
     
-    # Get all users with their pick stats
-    users = User.objects.annotate(
-        total_picks=Count('pick'),
-        total_points=Sum(
-            Case(
-                When(
-                    pick__game__status='FINAL',
-                    pick__selected_team=Case(
-                        When(pick__game__home_score__gt=models.F('pick__game__away_score'), 
-                             then='pick__game__home_team'),
-                        When(pick__game__away_score__gt=models.F('pick__game__home_score'), 
-                             then='pick__game__away_team'),
-                        default=None
-                    ),
-                    then='pick__confidence_points'
-                ),
-                default=0,
-                output_field=IntegerField()
-            )
-        )
-    ).order_by('-total_points')
+    # Get all users who have made picks
+    users_with_picks = User.objects.filter(pick__isnull=False).distinct()
+    
+    user_stats = []
+    
+    for user in users_with_picks:
+        # Get all picks for this user
+        picks = user.pick_set.select_related('game', 'selected_team').all()
+        
+        total_picks = picks.count()
+        
+        # Calculate stats for finished games only
+        finished_picks = picks.filter(game__status='FINAL', game__is_closed=True)
+        completed_games = finished_picks.count()
+        
+        correct_picks = 0
+        total_points = 0
+        
+        for pick in finished_picks:
+            if pick.is_correct:  # This uses the property from your model
+                correct_picks += 1
+                total_points += pick.confidence_points
+        
+        # Calculate win percentage
+        win_percentage = (correct_picks / completed_games * 100) if completed_games > 0 else 0
+        
+        user_stats.append({
+            'user': user,
+            'total_picks': total_picks,
+            'completed_games': completed_games,
+            'correct_picks': correct_picks,
+            'total_points': total_points,
+            'win_percentage': round(win_percentage, 1),
+        })
+    
+    # Sort by total points (descending)
+    user_stats.sort(key=lambda x: x['total_points'], reverse=True)
     
     context = {
-        'users': users,
+        'user_stats': user_stats,
     }
     return render(request, 'picks/leaderboard.html', context)
