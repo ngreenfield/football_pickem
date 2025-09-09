@@ -30,7 +30,7 @@
                     {% endif %}
                 </div>
                 <div class="card-body">
-                    {% if week.game_set.all %}
+                    {% if week.game_set.count %}
                         <div class="row">
                             {% for game in week.game_set.all %}
                                 <div class="col-md-6 col-lg-4 mb-3">

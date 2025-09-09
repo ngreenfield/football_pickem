@@ -13,16 +13,17 @@ def game_list(request):
         'game_set__home_team',
         'game_set__away_team'
     ).order_by('number')
-    
-    # Annotate games with user's picks if authenticated
+
+    user_picks = {}
     if request.user.is_authenticated:
-        for week in weeks:
-            for game in week.game_set.all():
-                try:
-                    user_pick = Pick.objects.get(user=request.user, game=game)
-                    game.user_pick = user_pick
-                except Pick.DoesNotExist:
-                    game.user_pick = None
+        picks = Pick.objects.filter(user=request.user, game__week__in=weeks).select_related('game', 'selected_team')
+        user_picks = {pick.game.id: pick for pick in picks}
+
+    context = {
+        'weeks': weeks,
+        'user_picks': user_picks,
+    }
+    return render(request, 'picks/game_list.html', context)
     
     context = {
         'weeks': weeks,
