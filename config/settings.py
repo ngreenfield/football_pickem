@@ -133,4 +133,5 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGOUT_REDIRECT_URL = '/'  # or 'login', or wherever you want users to go after logout
+LOGOUT_REDIRECT_URL = '/'  
+LOGIN_REDIRECT_URL = 'users:profile'
