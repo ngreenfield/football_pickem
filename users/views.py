@@ -38,7 +38,7 @@ def profile_view(request):
             completed_games += 1
             if pick.is_correct:
                 correct_picks += 1
-                total_points += pick.confidence_points  # Fixed field name
+                total_points += pick.confidence_points  
     
     # Calculate win percentage
     win_percentage = (correct_picks / completed_games * 100) if completed_games > 0 else 0
@@ -57,4 +57,4 @@ def profile_view(request):
 def logout_view(request):
     logout(request)
     messages.success(request, "You have been logged out.")
-    return redirect('users:login')  # or wherever you want
+    return redirect('users:login')  

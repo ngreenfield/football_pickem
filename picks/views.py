@@ -254,7 +254,7 @@ def leaderboard(request):
         total_points = 0
         
         for pick in finished_picks:
-            if pick.is_correct:  # This uses the property from your model
+            if pick.is_correct:  
                 correct_picks += 1
                 total_points += pick.confidence_points
         
