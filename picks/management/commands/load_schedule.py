@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from picks.models import Game, Team, Week
 from django.utils.timezone import make_aware
 
-API_KEY = 'de9f5a7aa8b048539b69351e35e40dc9'
+API_KEY = '6f3556c6beb94c71a62b02d1f0960704'
 YEAR = 2025
 API_URL = f"https://api.sportsdata.io/v3/nfl/scores/json/Schedules/{YEAR}"
 

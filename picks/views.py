@@ -3,15 +3,17 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
 from django.http import JsonResponse
-from django.db import models
+from django.db.models import Prefetch
 from .models import Game, Pick, Week, Team
-from .forms import WeekPicksForm
+
 
 def game_list(request):
     """Display games grouped by week"""
     weeks = Week.objects.prefetch_related(
-        'game_set__home_team',
-        'game_set__away_team'
+        Prefetch(
+            'game_set',
+            queryset=Game.objects.select_related('home_team', 'away_team').order_by('game_date')
+        )
     ).order_by('number')
 
     user_picks = {}
