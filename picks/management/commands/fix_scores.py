@@ -7,6 +7,20 @@ API_KEY = '6f3556c6beb94c71a62b02d1f0960704'
 
 class Command(BaseCommand):
     help = "Fix NFL scores for Week 1"
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            'week_number',
+            nargs='?',
+            type=int,
+            default=1,
+            help='Week number to update scores for'
+        )
+        parser.add_argument(
+            '--debug',
+            action='store_true',
+            help='Enable detailed debugging output'
+        )
     
     def handle(self, *args, **options):
         self.stdout.write("Fixing Week 1 scores...")
