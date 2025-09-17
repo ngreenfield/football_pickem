@@ -35,6 +35,48 @@ class Command(BaseCommand):
             help='Show raw API response for debugging'
         )
 
+    def get_valid_score(self, primary_field, fallback_field, game_status, is_closed, debug=False):
+        """
+        Get a valid score with better fallback logic
+        """
+        def convert_score(score_value, field_name=""):
+            if debug:
+                self.stdout.write(f"      Converting {field_name}: {score_value} (type: {type(score_value).__name__})")
+            
+            if score_value is None:
+                return None
+            if score_value == '' or score_value == 'null':
+                return 0 if is_closed else None
+            try:
+                converted = int(float(str(score_value)))
+                if debug:
+                    self.stdout.write(f"      Successfully converted to: {converted}")
+                return converted
+            except (ValueError, TypeError):
+                if debug:
+                    self.stdout.write(f"      Failed to convert, returning 0 for closed games")
+                return 0 if is_closed else None
+        
+        # Try primary field first
+        if debug:
+            self.stdout.write(f"    Trying primary field...")
+        score = convert_score(primary_field, "primary")
+        if score is not None:
+            return score
+        
+        # Try fallback field
+        if debug:
+            self.stdout.write(f"    Trying fallback field...")
+        score = convert_score(fallback_field, "fallback")
+        if score is not None:
+            return score
+        
+        # If both are None/invalid, return 0 for closed games, None for others
+        final_score = 0 if is_closed else None
+        if debug:
+            self.stdout.write(f"    Both fields invalid, returning: {final_score}")
+        return final_score
+
     def handle(self, *args, **options):
         week_number = options['week_number']
         debug = options.get('debug', False)
@@ -84,6 +126,57 @@ class Command(BaseCommand):
                 self.stdout.write(f"\n🔍 Raw API Response (first game):")
                 self.stdout.write(json.dumps(data[0], indent=2))
 
+            # Enhanced debugging for score analysis
+            if debug:
+                self.stdout.write(f"\n🔍 DETAILED SCORE ANALYSIS FOR WEEK {week_number}:")
+                for i, item in enumerate(data):
+                    game_key = item.get('GameKey', 'NO_KEY')
+                    home_team = item.get('HomeTeam', 'NO_HOME')
+                    away_team = item.get('AwayTeam', 'NO_AWAY')
+                    status = item.get('Status', 'NO_STATUS')
+                    is_closed = item.get('IsClosed', False)
+                    
+                    # Check ALL possible score fields and their types
+                    score_analysis = {
+                        'HomeTeamScore': {
+                            'value': item.get('HomeTeamScore'),
+                            'type': type(item.get('HomeTeamScore')).__name__,
+                            'is_none': item.get('HomeTeamScore') is None,
+                            'is_empty_str': item.get('HomeTeamScore') == '',
+                        },
+                        'HomeScore': {
+                            'value': item.get('HomeScore'),
+                            'type': type(item.get('HomeScore')).__name__,
+                            'is_none': item.get('HomeScore') is None,
+                            'is_empty_str': item.get('HomeScore') == '',
+                        },
+                        'AwayTeamScore': {
+                            'value': item.get('AwayTeamScore'),
+                            'type': type(item.get('AwayTeamScore')).__name__,
+                            'is_none': item.get('AwayTeamScore') is None,
+                            'is_empty_str': item.get('AwayTeamScore') == '',
+                        },
+                        'AwayScore': {
+                            'value': item.get('AwayScore'),
+                            'type': type(item.get('AwayScore')).__name__,
+                            'is_none': item.get('AwayScore') is None,
+                            'is_empty_str': item.get('AwayScore') == '',
+                        }
+                    }
+                    
+                    self.stdout.write(f"\n   Game {i+1}: {game_key} - {away_team} @ {home_team}")
+                    self.stdout.write(f"   Status: {status} | Closed: {is_closed}")
+                    
+                    for field_name, analysis in score_analysis.items():
+                        self.stdout.write(f"   {field_name}: {analysis['value']} "
+                                        f"({analysis['type']}) "
+                                        f"[None: {analysis['is_none']}, Empty: {analysis['is_empty_str']}]")
+                    
+                    # Also check for any other score-related fields
+                    other_fields = {k: v for k, v in item.items() if 'score' in k.lower() or 'point' in k.lower()}
+                    if other_fields:
+                        self.stdout.write(f"   OTHER SCORE FIELDS: {other_fields}")
+
             if debug and data:
                 self.stdout.write(f"\n🔍 API games summary:")
                 for i, item in enumerate(data):
@@ -95,17 +188,8 @@ class Command(BaseCommand):
                     status = item.get('Status', 'NO_STATUS')
                     is_closed = item.get('IsClosed', False)
                     
-                    # Show all available score fields for debugging
-                    score_fields = {
-                        'HomeTeamScore': item.get('HomeTeamScore'),
-                        'HomeScore': item.get('HomeScore'),
-                        'AwayTeamScore': item.get('AwayTeamScore'),
-                        'AwayScore': item.get('AwayScore')
-                    }
-                    
                     self.stdout.write(f"   {i+1}. {game_key}: {away_team} @ {home_team} "
                                     f"({away_score}-{home_score}) [{status}] Closed:{is_closed}")
-                    self.stdout.write(f"      Score fields: {score_fields}")
 
             updated_count = 0
             skipped_count = 0
@@ -119,21 +203,36 @@ class Command(BaseCommand):
                         self.stderr.write("⚠ Skipping game with no GameKey")
                         continue
 
-                    # Prefer the most accurate score fields with better fallback logic
-                    home_score = item.get('HomeTeamScore')
-                    if home_score is None:
-                        home_score = item.get('HomeScore')
-                    
-                    away_score = item.get('AwayTeamScore')  
-                    if away_score is None:
-                        away_score = item.get('AwayScore')
-
                     home_team_api = item.get('HomeTeam')
                     away_team_api = item.get('AwayTeam')
-
                     status = item.get('Status', 'Scheduled')
                     is_closed = item.get('IsClosed', False)
                     last_updated = item.get('Updated') or item.get('LastUpdated')
+
+                    # Use improved score extraction
+                    home_score = self.get_valid_score(
+                        item.get('HomeTeamScore'), 
+                        item.get('HomeScore'), 
+                        status, 
+                        is_closed,
+                        debug
+                    )
+
+                    away_score = self.get_valid_score(
+                        item.get('AwayTeamScore'), 
+                        item.get('AwayScore'), 
+                        status, 
+                        is_closed,
+                        debug
+                    )
+
+                    if debug:
+                        self.stdout.write(f"\n  🔍 Score extraction for {game_key}:")
+                        self.stdout.write(f"    Raw HomeTeamScore: {item.get('HomeTeamScore')}")
+                        self.stdout.write(f"    Raw HomeScore: {item.get('HomeScore')}")
+                        self.stdout.write(f"    Raw AwayTeamScore: {item.get('AwayTeamScore')}")
+                        self.stdout.write(f"    Raw AwayScore: {item.get('AwayScore')}")
+                        self.stdout.write(f"    FINAL EXTRACTED SCORES: Away={away_score}, Home={home_score}")
 
                     # Only skip non-final games if final_only flag is set
                     if final_only and (not is_closed or status not in ['Final', 'Final OT', 'F', 'F/OT']):
@@ -177,31 +276,16 @@ class Command(BaseCommand):
                     updated = False
                     changes = []
 
-                    # Score updates - now update all scores regardless of game status
-                    # Handle None values more carefully
-                    if home_score is not None:
-                        # Convert to int if it's a string/float
-                        try:
-                            home_score = int(float(home_score)) if home_score != '' else 0
-                        except (ValueError, TypeError):
-                            home_score = 0
-                            
-                        if home_score != game.home_score:
-                            changes.append(f"Home: {game.home_score} → {home_score}")
-                            game.home_score = home_score
-                            updated = True
+                    # Score updates - only update if we have valid data
+                    if home_score is not None and home_score != game.home_score:
+                        changes.append(f"Home: {game.home_score} → {home_score}")
+                        game.home_score = home_score
+                        updated = True
 
-                    if away_score is not None:
-                        # Convert to int if it's a string/float  
-                        try:
-                            away_score = int(float(away_score)) if away_score != '' else 0
-                        except (ValueError, TypeError):
-                            away_score = 0
-                            
-                        if away_score != game.away_score:
-                            changes.append(f"Away: {game.away_score} → {away_score}")
-                            game.away_score = away_score
-                            updated = True
+                    if away_score is not None and away_score != game.away_score:
+                        changes.append(f"Away: {game.away_score} → {away_score}")
+                        game.away_score = away_score
+                        updated = True
 
                     # Enhanced status mapping
                     status_mapping = {
