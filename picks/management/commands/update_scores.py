@@ -21,11 +21,13 @@ class Command(BaseCommand):
         parser.add_argument(
             '--debug',
             action='store_true',
+            dest='debug',
             help='Enable debugging output'
         )
         parser.add_argument(
             '--final-only',
             action='store_true',
+            dest='final_only',
             help='Only update final/closed games'
         )
 
@@ -124,6 +126,12 @@ class Command(BaseCommand):
 
                     try:
                         game = Game.objects.get(api_id=game_key)
+                        
+                        # Always show first few games for debugging
+                        if updated_count + not_found_count < 3 and not debug:
+                            self.stdout.write(f"🔍 Found game: {game.away_team.short_name} @ {game.home_team.short_name} ({game.away_score}-{game.home_score})")
+                            self.stdout.write(f"   API scores: {away_score}-{home_score}, Status: {status}")
+                            
                     except Game.DoesNotExist:
                         if debug:
                             self.stdout.write(f"⚠️ Game {game_key} not found in database")
