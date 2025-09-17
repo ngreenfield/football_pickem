@@ -169,10 +169,10 @@ class Command(BaseCommand):
                     self.stderr.write(f"❌ Error processing {item.get('GameKey', 'unknown')}: {e}")
 
             # Summary
-            self.stdout.write(f"\n📊 Summary: {updated_count} updated, {not_found_count} not found", end="")
+            summary = f"\n📊 Summary: {updated_count} updated, {not_found_count} not found"
             if final_only:
-                self.stdout.write(f", {skipped_count} skipped")
-            self.stdout.write("")
+                summary += f", {skipped_count} skipped"
+            self.stdout.write(summary)
 
         except requests.RequestException as e:
             self.stderr.write(f"❌ API request failed: {e}")
