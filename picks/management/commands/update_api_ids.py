@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 import requests
-from picks.models import Game, Team
+from picks.models import Game
 
 class Command(BaseCommand):
     help = "Update Game.api_id by matching teams with ESPN API game IDs for a given week"
@@ -18,6 +18,12 @@ class Command(BaseCommand):
         season_type = 2  # Regular season
 
         url = f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={year}&seasontype={season_type}&week={week_number}"
+
+        # Map full ESPN team names to your DB abbreviations (add more as needed)
+        full_name_to_abbr = {
+            "Washington Commanders": "WAS",
+            # Add other mappings here if you find mismatches
+        }
 
         try:
             response = requests.get(url, timeout=30)
@@ -38,23 +44,27 @@ class Command(BaseCommand):
 
             espn_game_map = {}  # Key: (away_short, home_short), Value: espn_game_id
 
+            def get_team_abbr(team_data):
+                abbr = team_data['team'].get('abbreviation')
+                if abbr:
+                    return abbr.upper()
+                full_name = team_data['team'].get('displayName') or team_data['team'].get('shortDisplayName')
+                return full_name_to_abbr.get(full_name, full_name.upper())
+
             for eg in espn_games:
                 competition = eg.get('competitions', [])[0]
                 competitors = competition.get('competitors', [])
 
-                # Extract away and home team short names from ESPN data
                 away_team = next((c for c in competitors if c['homeAway'] == 'away'), None)
                 home_team = next((c for c in competitors if c['homeAway'] == 'home'), None)
 
                 if not away_team or not home_team:
                     continue
 
-                # Use shortDisplayName or abbreviation - adjust as needed to match your DB short_name
-                away_short = away_team['team'].get('abbreviation') or away_team['team'].get('shortDisplayName')
-                home_short = home_team['team'].get('abbreviation') or home_team['team'].get('shortDisplayName')
+                away_short = get_team_abbr(away_team)
+                home_short = get_team_abbr(home_team)
 
-                if away_short and home_short:
-                    espn_game_map[(away_short.upper(), home_short.upper())] = eg['id']
+                espn_game_map[(away_short, home_short)] = eg['id']
 
             updated_count = 0
 
@@ -71,9 +81,4 @@ class Command(BaseCommand):
                 else:
                     self.stdout.write(f"⚠️ No ESPN match found for {game.away_team} @ {game.home_team}")
 
-            self.stdout.write(f"\n🎉 Updated API IDs for {updated_count} games in Week {week_number}")
-
-        except Exception as e:
-            self.stderr.write(f"❌ Exception occurred: {e}")
-            import traceback
-            traceback.print_exc()
+            self.stdout.write(f"\n🎉 Updated API IDs for {updated_count} games in Wee_
