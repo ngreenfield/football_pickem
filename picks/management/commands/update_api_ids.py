@@ -81,4 +81,4 @@ class Command(BaseCommand):
                 else:
                     self.stdout.write(f"⚠️ No ESPN match found for {game.away_team} @ {game.home_team}")
 
-            self.stdout.write(f"\n🎉 Updated API IDs for {updated_count} games in Wee_
+            self.stdout.write(f"\n🎉 Updated API IDs for {updated_count} games in Week {week_number}")
