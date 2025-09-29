@@ -26,6 +26,12 @@ class Command(BaseCommand):
 
             data = response.json()
             espn_games = data.get('events', [])
+
+            # Debug: print all ESPN game IDs fetched from API
+            self.stdout.write("ESPN game IDs returned by API:")
+            for eg in espn_games:
+                self.stdout.write(str(eg.get('id')))
+
             if not espn_games:
                 self.stdout.write("⚠️ No ESPN games found for this week")
                 return
