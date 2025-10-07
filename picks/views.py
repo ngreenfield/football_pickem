@@ -235,7 +235,6 @@ def my_picks(request):
     return render(request, 'picks/my_picks.html', context)
 
 def all_picks(request):
-   def all_picks(request):
     """Display all users' picks for all weeks"""
     # Get all weeks with games, ordered by week number (ascending: 1, 2, 3...)
     weeks = Week.objects.prefetch_related(
