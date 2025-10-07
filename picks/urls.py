@@ -12,6 +12,7 @@ urlpatterns = [
     path('week/<int:week_number>/', views.week_picks, name='week_picks'),
     path('my-picks/', views.my_picks, name='my_picks'),
     path('make-pick/<int:game_id>/', views.make_pick, name='make_pick'),
+    path('all-picks/', views.all_picks, name='all_picks'),
     
     # Leaderboard
     path('leaderboard/', views.leaderboard, name='leaderboard'),
