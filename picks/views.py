@@ -8,10 +8,12 @@ from django.db.models import Prefetch
 from django.contrib.auth.models import User
 from .models import Game, Pick, Week, Team
 
+CURRENT_SEASON = 2026
+
 
 def game_list(request):
     """Display games grouped by week"""
-    weeks = Week.objects.prefetch_related(
+    weeks = Week.objects.filter(season=CURRENT_SEASON).prefetch_related(
         Prefetch(
             'game_set',
             queryset=Game.objects.select_related('home_team', 'away_team').order_by('game_date')
@@ -55,7 +57,11 @@ def game_detail(request, pk):
 @login_required
 def week_picks(request, week_number):
     """Display and handle picks for a specific week"""
-    week = get_object_or_404(Week, number=week_number)
+    week = get_object_or_404(
+    Week,
+    season=CURRENT_SEASON,
+    number=week_number
+    )
     games = Game.objects.filter(week=week).select_related(
         'home_team', 'away_team'
     ).order_by('game_date')
@@ -176,8 +182,13 @@ def make_pick(request, game_id):
             return JsonResponse({'error': 'Invalid team selection'}, status=400)
         
         # Validate confidence points
-        if confidence_points < 1 or confidence_points > 16:
-            return JsonResponse({'error': 'Confidence points must be between 1 and 16'}, status=400)
+        # Validate confidence points
+        week_game_count = Game.objects.filter(week=game.week).count()
+
+        if confidence_points < 1 or confidence_points > week_game_count:
+            return JsonResponse({
+        'error': f'Confidence points must be between 1 and {week_game_count}'
+        }, status=400)
         
         # Create or update pick
         pick, created = Pick.objects.update_or_create(
@@ -204,7 +215,10 @@ def make_pick(request, game_id):
 @login_required
 def my_picks(request):
     """Display all user's picks organized by week"""
-    picks = Pick.objects.filter(user=request.user).select_related(
+    picks = Pick.objects.filter(
+    user=request.user,
+    game__week__season=CURRENT_SEASON
+    ).select_related(
         'game', 'selected_team', 'game__home_team', 'game__away_team', 'game__week'
     ).order_by('-game__week__number', '-game__game_date')
     
@@ -237,7 +251,7 @@ def my_picks(request):
 def all_picks(request):
     """Display all users' picks for all weeks"""
     # Get all weeks with games, ordered by week number (ascending: 1, 2, 3...)
-    weeks = Week.objects.prefetch_related(
+    weeks = week.objects.filter(season=CURRENT_SEASON).prefetch_related(
         Prefetch(
             'game_set',
             queryset=Game.objects.select_related('home_team', 'away_team').order_by('game_date')
@@ -293,7 +307,9 @@ def leaderboard(request):
     
     for user in users_with_picks:
         # Get all picks for this user
-        picks = user.pick_set.select_related('game', 'selected_team').all()
+        picks = user.pick_set.filter(
+            game__week__season=CURRENT_SEASON
+        ).select_related('game', 'selected_team')
         
         total_picks = picks.count()
         

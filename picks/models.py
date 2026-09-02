@@ -11,12 +11,15 @@ class Team(models.Model):
     
 
 class Week(models.Model):
+    season = models.IntegerField(default=2026)
     number = models.IntegerField()
-    
-    def __str__(self):
-        return f"Week {self.number}"
-    
 
+    class Meta:
+        unique_together = [('season', 'number')]
+
+        def __str__(self):
+            return f"{self.season} Week {self.number}"
+    
 class Game(models.Model):
     STATUS_CHOICES = [
         ('SCHEDULED', 'Scheduled'),
