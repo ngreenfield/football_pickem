@@ -251,7 +251,7 @@ def my_picks(request):
 def all_picks(request):
     """Display all users' picks for all weeks"""
     # Get all weeks with games, ordered by week number (ascending: 1, 2, 3...)
-    weeks = week.objects.filter(season=CURRENT_SEASON).prefetch_related(
+    weeks = Week.objects.filter(season=CURRENT_SEASON).prefetch_related(
         Prefetch(
             'game_set',
             queryset=Game.objects.select_related('home_team', 'away_team').order_by('game_date')
