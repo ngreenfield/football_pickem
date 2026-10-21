@@ -248,52 +248,72 @@ def my_picks(request):
     
     return render(request, 'picks/my_picks.html', context)
 
+
 def all_picks(request):
-    """Display all users' picks for all weeks"""
-    # Get all weeks with games, ordered by week number (ascending: 1, 2, 3...)
-    weeks = Week.objects.filter(season=CURRENT_SEASON).prefetch_related(
+    """Display all users' picks for all weeks."""
+    weeks = Week.objects.filter(
+        season=CURRENT_SEASON
+    ).prefetch_related(
         Prefetch(
             'game_set',
-            queryset=Game.objects.select_related('home_team', 'away_team').order_by('game_date')
+            queryset=Game.objects.select_related(
+                'home_team', 'away_team'
+            ).order_by('game_date')
         )
     ).order_by('number')
-    
-    # Get all users who have made picks
-    users = User.objects.filter(pick__isnull=False).distinct().order_by('username')
-    
-    # Build a structure: week -> game -> user -> pick
+
+    users = User.objects.filter(
+        pick__isnull=False
+    ).distinct().order_by('username')
+
     weeks_data = []
+
     for week in weeks:
         games = week.game_set.all()
-        
-        # Get all picks for this week
-        picks = Pick.objects.filter(
-            game__week=week
-        ).select_related('user', 'selected_team', 'game')
-        
-        # Organize picks by game and user
+
+        picks = list(
+            Pick.objects.filter(
+                game__week=week
+            ).select_related(
+                'user', 'selected_team', 'game'
+            )
+        )
+
+        week_totals = {user.id: 0 for user in users}
         games_data = []
+
         for game in games:
             game_picks = {}
+
             for pick in picks:
-                if pick.game.id == game.id:
-                    game_picks[pick.user.id] = pick
-            
+                if pick.game_id == game.id:
+                    game_picks[pick.user_id] = pick
+
+                    if (
+                        game.status == 'FINAL'
+                        and game.is_closed
+                        and pick.is_correct
+                    ):
+                        week_totals[pick.user_id] += pick.confidence_points
+
             games_data.append({
                 'game': game,
-                'picks': game_picks
+                'picks': game_picks,
             })
-        
+
         weeks_data.append({
             'week': week,
-            'games': games_data
+            'games': games_data,
+            'week_totals': week_totals,
         })
-    
+
     context = {
         'weeks_data': weeks_data,
         'users': users,
     }
+
     return render(request, 'picks/all_picks.html', context)
+
 
 def leaderboard(request):
     """Display leaderboard of all users"""
