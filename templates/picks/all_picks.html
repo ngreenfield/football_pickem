@@ -107,6 +107,18 @@
                                                 {% endfor %}
                                             </tr>
                                         {% endfor %}
+
+                                       <!-- Weekly totals -->
+                                        <tr class="table-dark">
+                                            <th colspan="4" class="text-end">
+                                                Weekly Total
+                                            </th>
+                                            {% for user in users %}
+                                                <th class="text-center">
+                                                    {{ week_data.week_totals|get_item:user.id|default:0 }}
+                                                </th>
+                                            {% endfor %}
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
